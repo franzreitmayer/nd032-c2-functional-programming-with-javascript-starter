@@ -1,8 +1,11 @@
-let store = {
+const store = {
     user: { name: "Student" },
     apod: '',
     rovers: ['Curiosity', 'Opportunity', 'Spirit'],
 }
+
+let state = Immutable.Map(store);
+
 
 // add our markup to the page
 const root = document.getElementById('root')
@@ -12,7 +15,7 @@ const updateStore = (store, newState) => {
     render(root, store)
 }
 
-const render = async (root, state) => {
+const render = async(root, state) => {
     root.innerHTML = App(state)
 }
 
@@ -24,6 +27,7 @@ const App = (state) => {
     return `
         <header></header>
         <main>
+            ${TabStrip(store)}
             ${Greeting(store.user.name)}
             <section>
                 <h3>Put things on the page!</h3>
@@ -41,6 +45,17 @@ const App = (state) => {
         </main>
         <footer></footer>
     `
+}
+
+const TabStrip = (state) => {
+    const { rovers } = state;
+    const buttons = rovers.map(rover => `<button class="tablinks"onclick="switchRover(event, '${rover}')">${rover}</button>`);
+    return `
+        <div class="tabbedpane">
+            ${buttons.reduce( (previous, current) => current += previous, "")}
+        </div>
+    `;
+
 }
 
 // listening for load event because page should load before any JS is called
@@ -72,7 +87,7 @@ const ImageOfTheDay = (apod) => {
     console.log(photodate.getDate(), today.getDate());
 
     console.log(photodate.getDate() === today.getDate());
-    if (!apod || apod.date === today.getDate() ) {
+    if (!apod || apod.date === today.getDate()) {
         getImageOfTheDay(store)
     }
 
@@ -102,4 +117,9 @@ const getImageOfTheDay = (state) => {
         .then(apod => updateStore(store, { apod }))
 
     return data
+}
+
+
+const switchRover = function(event, rover) {
+    alert(`switching to rover ${rover}`)
 }

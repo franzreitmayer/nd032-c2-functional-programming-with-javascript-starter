@@ -1,38 +1,84 @@
 /* -------------------  MOBILE  --------------------- */
 
 body {
-  display: flex;
-  flex-direction: column;
-  font-family: Arial;
-  min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: Arial;
+    min-height: 100vh;
 }
 
 header {
-  /* header styles */
+    /* header styles */
 }
 
 main {
-  flex: 1;
-  padding: 20px;
+    flex: 1;
+    padding: 20px;
 }
 
 footer {
-  /* footer styles */
+    /* footer styles */
 }
 
-/* -------------------  TABLET  --------------------- */
-@media (min-width: 768px) {
-  /* use mobile */
+
+/* pane for tabbs */
+
+.tabbedpane {
+    overflow: hidden;
+    border: 1px solid rgb(112, 169, 187);
+    background-color: #261352;
 }
+
+
+/* buttons within the tabbedpane */
+
+.tabbedpane button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    color: aliceblue;
+    font-size: 1em;
+}
+
+
+/* -------------------  TABLET  --------------------- */
+
+@media (min-width: 768px) {
+    /* use mobile */
+    .tabbedpane {
+        background-color: rgb(196, 240, 253);
+    }
+    .tabbedpane button {
+        color: rgb(33, 66, 95);
+    }
+}
+
 
 /* -------------------  DESKTOP  -------------------- */
 
 @media (min-width: 1224px) {
-  /* use mobile */
+    /* use mobile */
+    .tabbedpane {
+        background-color: rgb(2, 68, 88);
+    }
+    .tabbedpane button {
+        color: rgb(189, 201, 211);
+    }
 }
+
 
 /* -------------------  LARGE SCREENS  -------------- */
 
 @media (min-width: 1824px) {
-  /* use mobile */
+    /* use mobile */
+    .tabbedpane {
+        background-color: rgb(2, 68, 88);
+    }
+    .tabbedpane button {
+        color: rgb(189, 201, 211);
+    }
 }
