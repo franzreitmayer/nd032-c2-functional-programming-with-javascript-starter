@@ -25,4 +25,33 @@ app.get('/apod', async (req, res) => {
     }
 })
 
+app.get('/api/*', async (req, res) => {
+    console.log('processing api...');
+    try {
+        const path = req.url;
+        console.log(`Path: ${path}`);
+
+        // truncate leading /api
+        const pathToForward = path.slice(4);
+        console.log(`Path forwared: ${pathToForward}`);
+        
+        let url;
+        if (pathToForward.includes('&')) {
+            url = `https://api.nasa.gov${pathToForward}&api_key=${process.env.API_KEY}`
+        } else {
+            url = `https://api.nasa.gov${pathToForward}?api_key=${process.env.API_KEY}`
+        }
+        console.log(`URL: ${url}`);
+        let response = await fetch(url)
+            .then(res => res.json())
+        res.send({ response })
+        
+       // res.send("OK");
+    } catch (err) {
+        console.log('error:', err);
+    }
+
+});
+
+
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))

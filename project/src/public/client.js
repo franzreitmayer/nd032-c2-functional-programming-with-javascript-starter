@@ -1,7 +1,22 @@
+
 const store = {
     user: { name: "Student" },
     apod: '',
-    rovers: ['Curiosity', 'Opportunity', 'Spirit'],
+    currentRover: "",
+    rovers: Immutable.Map( {
+        'Curiosity': {
+            metadata: Immutable.Map(),
+            images: Immutable.Map()
+        },
+        'Opportunity': {
+            metadata: Immutable.Map(),
+            images: Immutable.Map()
+        },
+        'Spirit': {
+            metadata: Immutable.Map(),
+            images: Immutable.Map()
+        }
+    })
 }
 
 let state = Immutable.Map(store);
@@ -11,8 +26,10 @@ let state = Immutable.Map(store);
 const root = document.getElementById('root')
 
 const updateStore = (store, newState) => {
-    store = Object.assign(store, newState)
-    render(root, store)
+    // store = Object.assign(store, newState)
+    // render(root, store)
+    state = state.merge(newState);
+    render(root, state.toJSON());
 }
 
 const render = async(root, state) => {
@@ -29,6 +46,7 @@ const App = (state) => {
         <main>
             ${TabStrip(store)}
             ${Greeting(store.user.name)}
+            ${RoverTiles(state)}
             <section>
                 <h3>Put things on the page!</h3>
                 <p>Here is an example section.</p>
@@ -49,12 +67,27 @@ const App = (state) => {
 
 const TabStrip = (state) => {
     const { rovers } = state;
-    const buttons = rovers.map(rover => `<button class="tablinks"onclick="switchRover(event, '${rover}')">${rover}</button>`);
+    const roverNames = Object.keys(rovers.toJSON());
+
+    const buttons = roverNames.map(rover => `<button class="tablinks"onclick="switchRover(event, '${rover}')">${rover}</button>`);
     return `
         <div class="tabbedpane">
             ${buttons.reduce( (previous, current) => current += previous, "")}
         </div>
     `;
+
+}
+
+const RoverTiles = (state) => {
+    const { currentRover, rovers } = state;
+    const rover = rovers[currentRover];
+
+    if (currentRover == null || rover == null) return "";
+    
+    if (!rover.hasOwnProperty('images')) {
+        const maxRoverDate = rover.manifest.response.photo_manifest.max_date;
+        getImagesForRover(currentRover, maxRoverDate);
+    }
 
 }
 
@@ -84,19 +117,19 @@ const ImageOfTheDay = (apod) => {
     // If image does not already exist, or it is not from today -- request it again
     const today = new Date()
     const photodate = new Date(apod.date)
-    console.log(photodate.getDate(), today.getDate());
+    //console.log(photodate.getDate(), today.getDate());
 
     console.log(photodate.getDate() === today.getDate());
-    if (!apod || apod.date === today.getDate()) {
+    if (!apod || apod.image.date === today.getDate()) {
         getImageOfTheDay(store)
     }
 
     // check if the photo of the day is actually type video!
-    if (apod.media_type === "video") {
+    if (apod.image.media_type === "video") {
         return (`
-            <p>See today's featured video <a href="${apod.url}">here</a></p>
-            <p>${apod.title}</p>
-            <p>${apod.explanation}</p>
+            <p>See today's featured video <a href="${apod.image.url}">here</a></p>
+            <p>${apod.image.title}</p>
+            <p>${apod.image.explanation}</p>
         `)
     } else {
         return (`
@@ -116,10 +149,23 @@ const getImageOfTheDay = (state) => {
         .then(res => res.json())
         .then(apod => updateStore(store, { apod }))
 
-    return data
+    // return data
 }
 
+const getManifestForRover = (rover, state) => {
+    fetch(`http://localhost:3000/api/mars-photos/api/v1/manifests/${rover}`)
+        .then(res => res.json())
+        // .then(roverManifest => updateStore(state, { manifests: { [`${rover}`]: roverManifest } } ))
+        .then(roverManifest => updateStore(state, { currentRover: rover, rovers: { [`${rover}`]: {manifest: roverManifest} } } ))
+}
+
+const getImagesForRover = (rover, maxDate) => {
+    fetch(`http://localhost:3000/mars-photos/api/v1/rovers/${rover}/photos?earth_date=${maxDate}`)
+    .then(res => res.json())
+    .then(data => console.log(data));
+}
 
 const switchRover = function(event, rover) {
     alert(`switching to rover ${rover}`)
+    getManifestForRover(rover, state);
 }
