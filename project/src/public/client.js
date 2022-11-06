@@ -1,23 +1,49 @@
-
+/* const store = {
+    user: { name: "Student" },
+    apod: '',
+    currentRover: "",
+    rovers: {
+        Curiosity: Immutable.Map(),
+        Opportunity: Immutable.Map(),
+        Spirit: Immutable.Map()   
+    }
+}
+ */
 const store = {
     user: { name: "Student" },
     apod: '',
     currentRover: "",
-    rovers: Immutable.Map( {
-        'Curiosity': {
-            metadata: Immutable.Map(),
+    rovers: {
+        Curiosity: {
+            manifest: Immutable.Map(),
             images: Immutable.Map()
         },
-        'Opportunity': {
-            metadata: Immutable.Map(),
+        Opportunity: {
+            manifest: Immutable.Map(),
             images: Immutable.Map()
         },
-        'Spirit': {
-            metadata: Immutable.Map(),
+        Spirit: {
+            manifest: Immutable.Map(),
             images: Immutable.Map()
         }
-    })
+    }
 }
+
+/* rovers: Immutable.Map( {
+    'Curiosity': {
+        metadata: Immutable.Map(),
+        images: Immutable.Map()
+    },
+    'Opportunity': {
+        metadata: Immutable.Map(),
+        images: Immutable.Map()
+    },
+    'Spirit': {
+        metadata: Immutable.Map(),
+        images: Immutable.Map()
+    }
+})
+ */
 
 let state = Immutable.Map(store);
 
@@ -25,28 +51,30 @@ let state = Immutable.Map(store);
 // add our markup to the page
 const root = document.getElementById('root')
 
-const updateStore = (store, newState) => {
+const updateStore = (store, newState, ...path) => {
     // store = Object.assign(store, newState)
     // render(root, store)
-    state = state.merge(newState);
-    render(root, state.toJSON());
+    if (!(store == undefined)) {
+        state = state.mergeIn(path, newState);
+    }
+    render(root, state.toJS());
 }
 
-const render = async(root, state) => {
+const render = async (root, state) => {
     root.innerHTML = App(state)
 }
 
 
 // create content
-const App = (state) => {
-    let { rovers, apod } = state
+const App = (stateJson) => {
+    let { rovers, apod } = stateJson
 
     return `
         <header></header>
         <main>
-            ${TabStrip(store)}
-            ${Greeting(store.user.name)}
-            ${RoverTiles(state)}
+            ${TabStrip(state)}
+            ${Greeting(stateJson.user.name)}
+            ${RoverTiles(stateJson)}
             <section>
                 <h3>Put things on the page!</h3>
                 <p>Here is an example section.</p>
@@ -66,27 +94,33 @@ const App = (state) => {
 }
 
 const TabStrip = (state) => {
-    const { rovers } = state;
-    const roverNames = Object.keys(rovers.toJSON());
+    const rovers = state.get("rovers");
+    const rover_names = Object.keys(rovers);
 
-    const buttons = roverNames.map(rover => `<button class="tablinks"onclick="switchRover(event, '${rover}')">${rover}</button>`);
+    const buttons = rover_names.map(rover => `<button class="tablinks"onclick="switchRover(event, '${rover}')">${rover}</button>`);
     return `
         <div class="tabbedpane">
-            ${buttons.reduce( (previous, current) => current += previous, "")}
+            ${buttons.reduce((previous, current) => current += previous, "")}
         </div>
     `;
 
 }
 
-const RoverTiles = (state) => {
-    const { currentRover, rovers } = state;
-    const rover = rovers[currentRover];
+const RoverTiles = (stateJson) => {
+    const { currentRover } = stateJson;
+    const rover = stateJson.rovers[currentRover];
 
     if (currentRover == null || rover == null) return "";
-    
-    if (!rover.hasOwnProperty('images')) {
-        const maxRoverDate = rover.manifest.response.photo_manifest.max_date;
-        getImagesForRover(currentRover, maxRoverDate);
+
+    if (Object.keys(rover.images).length == 0) {
+        if (rover.manifest.response.photo_manifest.max_date != undefined) {
+
+            const maxRoverDate = rover.manifest.response.photo_manifest.max_date;
+            getImagesForRover(currentRover, maxRoverDate);
+        }
+    }
+    if (Object.keys(rover.images).length > 0) {
+        debugger;
     }
 
 }
@@ -142,30 +176,39 @@ const ImageOfTheDay = (apod) => {
 // ------------------------------------------------------  API CALLS
 
 // Example API call
-const getImageOfTheDay = (state) => {
-    let { apod } = state
+const getImageOfTheDay = (stateJson) => {
+    let { apod } = stateJson;
 
     fetch(`http://localhost:3000/apod`)
         .then(res => res.json())
-        .then(apod => updateStore(store, { apod }))
+        .then(apod => updateStore(stateJson, { apod }))
 
     // return data
 }
 
-const getManifestForRover = (rover, state) => {
+const getManifestForRover = (rover, stateJson) => {
     fetch(`http://localhost:3000/api/mars-photos/api/v1/manifests/${rover}`)
         .then(res => res.json())
         // .then(roverManifest => updateStore(state, { manifests: { [`${rover}`]: roverManifest } } ))
-        .then(roverManifest => updateStore(state, { currentRover: rover, rovers: { [`${rover}`]: {manifest: roverManifest} } } ))
+        // .then(roverManifest => updateStore(state, { currentRover: rover,  [`${rover}`]: {manifest: roverManifest} }  ))
+        .then(roverManifest => {
+            // state.get("rovers")[rover] = state.get("rovers")[rover].set("manifest", roverManifest);
+            updateStore(state, roverManifest, "rovers", rover, "manifest");
+        })
 }
 
 const getImagesForRover = (rover, maxDate) => {
-    fetch(`http://localhost:3000/mars-photos/api/v1/rovers/${rover}/photos?earth_date=${maxDate}`)
-    .then(res => res.json())
-    .then(data => console.log(data));
+    fetch(`http://localhost:3000/api/mars-photos/api/v1/rovers/${rover}/photos?earth_date=${maxDate}`)
+        .then(res => res.json())
+        // .then(images => updateStore(state, { [`${rover}`]: {images: images} } ));
+        .then(images => {
+            // state.rovers[rover].set("images", images);
+            updateStore(state, images, "rovers", rover, "images");
+        });
 }
 
-const switchRover = function(event, rover) {
+const switchRover = function (event, rover) {
     alert(`switching to rover ${rover}`)
+    updateStore(state, { currentRover: rover });
     getManifestForRover(rover, state);
 }

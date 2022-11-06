@@ -30,13 +30,14 @@ app.get('/api/*', async (req, res) => {
     try {
         const path = req.url;
         console.log(`Path: ${path}`);
+        console.log(`Query: ${req.query}`)
 
         // truncate leading /api
         const pathToForward = path.slice(4);
         console.log(`Path forwared: ${pathToForward}`);
         
         let url;
-        if (pathToForward.includes('&')) {
+        if (pathToForward.includes('?')) {
             url = `https://api.nasa.gov${pathToForward}&api_key=${process.env.API_KEY}`
         } else {
             url = `https://api.nasa.gov${pathToForward}?api_key=${process.env.API_KEY}`
