@@ -74,6 +74,7 @@ const App = (stateJson) => {
         <main>
             ${TabStrip(state)}
             ${Greeting(stateJson.user.name)}
+            ${GaleryTitle(stateJson)}
             ${RoverTiles(stateJson)}
             <section>
                 <h3>Put things on the page!</h3>
@@ -106,6 +107,15 @@ const TabStrip = (state) => {
 
 }
 
+const GaleryTitle = (stateJson) => {
+    const { currentRover } = stateJson;
+    if ( !( currentRover == undefined || currentRover == "" ) ) {
+        return `<h4>Images from Rover ${currentRover}</h4>`;
+    } else {
+        return "<h4>Please select a rover from the menu first.</h4>";
+    }
+}
+
 const RoverTiles = (stateJson) => {
     const { currentRover } = stateJson;
     const rover = stateJson.rovers[currentRover];
@@ -120,7 +130,21 @@ const RoverTiles = (stateJson) => {
         }
     }
     if (Object.keys(rover.images).length > 0) {
-        debugger;
+        // debugger;
+        let images = rover.images.response.photos;
+        let html_tiles = images.map(image => `
+            <div class="tile" style="background: url('${image.img_src}')">
+            <div class="tile-info">Test</div>
+            <a href="${image.img_src}" target="_blank">
+            <!-- <img class="tile-image" src="${image.img_src}" height=300px width=300px> -->
+            </img>
+            </a>
+
+            </div>
+            `);
+        return html_tiles.reduce( (previous, current) => current+= previous );
+    } else {
+        return "";
     }
 
 }
