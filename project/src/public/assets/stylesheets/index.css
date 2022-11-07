@@ -52,7 +52,8 @@ footer {
     width: 100px;
     height: 100px;
     margin: 5px;
-    background-size: 100% 100%;    
+    background-size: 100% 100%;
+    position: relative;    
 }
 
 .tile-image {
@@ -61,7 +62,11 @@ footer {
 }
 
 .tile-info {
-    position: relative;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: aliceblue;
+    font-size: xx-small;
   }
 
 /* -------------------  TABLET  --------------------- */

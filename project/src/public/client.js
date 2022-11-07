@@ -1,13 +1,5 @@
-/* const store = {
-    user: { name: "Student" },
-    apod: '',
-    currentRover: "",
-    rovers: {
-        Curiosity: Immutable.Map(),
-        Opportunity: Immutable.Map(),
-        Spirit: Immutable.Map()   
-    }
-}
+/**
+ * Store object template
  */
 const store = {
     user: { name: "Student" },
@@ -29,28 +21,21 @@ const store = {
     }
 }
 
-/* rovers: Immutable.Map( {
-    'Curiosity': {
-        metadata: Immutable.Map(),
-        images: Immutable.Map()
-    },
-    'Opportunity': {
-        metadata: Immutable.Map(),
-        images: Immutable.Map()
-    },
-    'Spirit': {
-        metadata: Immutable.Map(),
-        images: Immutable.Map()
-    }
-})
+/**
+ * global state object
  */
-
 let state = Immutable.Map(store);
 
 
 // add our markup to the page
 const root = document.getElementById('root')
 
+/**
+ * Updating the global object
+ * @param {*} store current state object
+ * @param {*} newState new state object or state object fragement
+ * @param  {...any} path the path the the newState should be merged to, leave empty to adress the states root
+ */
 const updateStore = (store, newState, ...path) => {
     // store = Object.assign(store, newState)
     // render(root, store)
@@ -60,6 +45,11 @@ const updateStore = (store, newState, ...path) => {
     render(root, state.toJS());
 }
 
+/**
+ * render the page
+ * @param {*} root 
+ * @param {*} state 
+ */
 const render = async (root, state) => {
     root.innerHTML = App(state)
 }
@@ -76,24 +66,16 @@ const App = (stateJson) => {
             ${Greeting(stateJson.user.name)}
             ${GaleryTitle(stateJson)}
             ${RoverTiles(stateJson)}
-            <section>
-                <h3>Put things on the page!</h3>
-                <p>Here is an example section.</p>
-                <p>
-                    One of the most popular websites at NASA is the Astronomy Picture of the Day. In fact, this website is one of
-                    the most popular websites across all federal agencies. It has the popular appeal of a Justin Bieber video.
-                    This endpoint structures the APOD imagery and associated metadata so that it can be repurposed for other
-                    applications. In addition, if the concept_tags parameter is set to True, then keywords derived from the image
-                    explanation are returned. These keywords could be used as auto-generated hashtags for twitter or instagram feeds;
-                    but generally help with discoverability of relevant imagery.
-                </p>
-                ${ImageOfTheDay(apod)}
-            </section>
         </main>
         <footer></footer>
     `
 }
 
+/**
+ * create the tab strip from current state
+ * @param {*} state 
+ * @returns 
+ */
 const TabStrip = (state) => {
     const rovers = state.get("rovers");
     const rover_names = Object.keys(rovers);
@@ -107,15 +89,28 @@ const TabStrip = (state) => {
 
 }
 
+/**
+ * create the gallery title
+ * @param {*} stateJson 
+ * @returns 
+ */
 const GaleryTitle = (stateJson) => {
     const { currentRover } = stateJson;
-    if ( !( currentRover == undefined || currentRover == "" ) ) {
-        return `<h4>Images from Rover ${currentRover}</h4>`;
+    if ( !( currentRover == undefined || currentRover == "" || Object.keys(stateJson.rovers[currentRover].manifest).length == 0 ) ) {
+        const launchDate = stateJson.rovers[currentRover].manifest.response.photo_manifest.launch_date;
+        const landingDate = stateJson.rovers[currentRover].manifest.response.photo_manifest.landing_date;
+        const mostRecentPhotosDate = stateJson.rovers[currentRover].manifest.response.photo_manifest.max_date;
+        return `<h4>Images from Rover ${currentRover}, Launch Date: ${launchDate}, Landing Date: ${landingDate}, Most Recent Photos taken: ${mostRecentPhotosDate}</h4>`;
     } else {
         return "<h4>Please select a rover from the menu first.</h4>";
     }
 }
 
+/**
+ * create the rover tiles
+ * @param {*} stateJson 
+ * @returns 
+ */
 const RoverTiles = (stateJson) => {
     const { currentRover } = stateJson;
     const rover = stateJson.rovers[currentRover];
@@ -133,10 +128,11 @@ const RoverTiles = (stateJson) => {
         // debugger;
         let images = rover.images.response.photos;
         let html_tiles = images.map(image => `
-            <div class="tile" style="background: url('${image.img_src}')">
-            <div class="tile-info">Test</div>
+            <div class="tile">
             <a href="${image.img_src}" target="_blank">
-            <!-- <img class="tile-image" src="${image.img_src}" height=300px width=300px> -->
+            <img class="tile-image" src="${image.img_src}" height=300px width=300px>
+            <div class="tile-info">Cam: ${image.camera.full_name}<br>
+            Taken: ${image.earth_date}</div>
             </img>
             </a>
 
@@ -210,6 +206,11 @@ const getImageOfTheDay = (stateJson) => {
     // return data
 }
 
+/**
+ * get the manifest for the current selected rover
+ * @param {*} rover 
+ * @param {*} stateJson 
+ */
 const getManifestForRover = (rover, stateJson) => {
     fetch(`http://localhost:3000/api/mars-photos/api/v1/manifests/${rover}`)
         .then(res => res.json())
@@ -221,6 +222,11 @@ const getManifestForRover = (rover, stateJson) => {
         })
 }
 
+/**
+ * get the images for the current selected rovers
+ * @param {*} rover 
+ * @param {*} maxDate 
+ */
 const getImagesForRover = (rover, maxDate) => {
     fetch(`http://localhost:3000/api/mars-photos/api/v1/rovers/${rover}/photos?earth_date=${maxDate}`)
         .then(res => res.json())
@@ -231,8 +237,13 @@ const getImagesForRover = (rover, maxDate) => {
         });
 }
 
+/**
+ * event handler to switch the rover by manu bar
+ * @param {*} event 
+ * @param {*} rover 
+ */
 const switchRover = function (event, rover) {
-    alert(`switching to rover ${rover}`)
+    // alert(`switching to rover ${rover}`)
     updateStore(state, { currentRover: rover });
     getManifestForRover(rover, state);
 }
