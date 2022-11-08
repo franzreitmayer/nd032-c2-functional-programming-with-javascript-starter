@@ -90,6 +90,51 @@ const TabStrip = (state) => {
 }
 
 /**
+ * first HOF to render the gallery title
+ * @param {*} rover 
+ * @param {*} launchDate 
+ * @param {*} landingDate 
+ * @param {*} mostRecentPhotosDate 
+ * @returns 
+ */
+const reusableGaleryTitle = function(rover, launchDate, landingDate, mostRecentPhotosDate) {
+    this._rover = rover;
+    this._launchDate = launchDate;
+    this._landingDate = landingDate;
+    this._mostRecentPhotosDate = mostRecentPhotosDate;
+    return (_rover, _launchDate, _landingDate, _mostRecentPhotosDate) => {
+        return `<h4>Images from Rover ${this._rover}, Launch Date: ${this._launchDate}, Landing Date: ${this._landingDate}, Most Recent Photos taken: ${this._mostRecentPhotosDate}</h4>`;
+    }
+}
+
+/**
+ * second HOF to render image tiles
+ * @param {*} imageSource 
+ * @param {*} cameraName 
+ * @param {*} earthDate 
+ * @returns 
+ */
+const reusablePhotoTile = function(imageSource, cameraName, earthDate) {
+    this._imageSource = imageSource;
+    this._cameraName = cameraName;
+    this._earthDate = earthDate;
+    return (_imageSource, _cameraName, _earthDate) => {
+        return `
+        <div class="tile">
+        <a href="${this._imageSource}" target="_blank">
+        <img class="tile-image" src="${this._imageSource}" height=300px width=300px>
+        <div class="tile-info">Cam: ${this._cameraName}<br>
+        Taken: ${this._earthDate}</div>
+        </img>
+        </a>
+
+        </div>
+        `;
+    }
+}
+
+
+/**
  * create the gallery title
  * @param {*} stateJson 
  * @returns 
@@ -100,11 +145,13 @@ const GaleryTitle = (stateJson) => {
         const launchDate = stateJson.rovers[currentRover].manifest.response.photo_manifest.launch_date;
         const landingDate = stateJson.rovers[currentRover].manifest.response.photo_manifest.landing_date;
         const mostRecentPhotosDate = stateJson.rovers[currentRover].manifest.response.photo_manifest.max_date;
-        return `<h4>Images from Rover ${currentRover}, Launch Date: ${launchDate}, Landing Date: ${landingDate}, Most Recent Photos taken: ${mostRecentPhotosDate}</h4>`;
+        // return `<h4>Images from Rover ${currentRover}, Launch Date: ${launchDate}, Landing Date: ${landingDate}, Most Recent Photos taken: ${mostRecentPhotosDate}</h4>`;
+        return reusableGaleryTitle(currentRover,launchDate,landingDate,mostRecentPhotosDate)();
     } else {
         return "<h4>Please select a rover from the menu first.</h4>";
     }
 }
+
 
 /**
  * create the rover tiles
@@ -127,23 +174,14 @@ const RoverTiles = (stateJson) => {
     if (Object.keys(rover.images).length > 0) {
         // debugger;
         let images = rover.images.response.photos;
-        let html_tiles = images.map(image => `
-            <div class="tile">
-            <a href="${image.img_src}" target="_blank">
-            <img class="tile-image" src="${image.img_src}" height=300px width=300px>
-            <div class="tile-info">Cam: ${image.camera.full_name}<br>
-            Taken: ${image.earth_date}</div>
-            </img>
-            </a>
-
-            </div>
-            `);
+        let html_tiles = images.map(image => reusablePhotoTile(image.img_src, image.camera.full_name, image.earthDate)());
         return html_tiles.reduce( (previous, current) => current+= previous );
     } else {
         return "";
     }
 
 }
+
 
 // listening for load event because page should load before any JS is called
 window.addEventListener('load', () => {
